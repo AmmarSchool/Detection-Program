@@ -34,7 +34,7 @@ class DetectionProgram:
             messagebox.showerror("Error", "Model file not found: decoder.h5")
             self.model = None
 
-        # Load feature extractor (MobileNetV2 without top layers)
+        # Load feature extractor (MobileNetV2 without top layers)s
         base_model = MobileNetV2(include_top=False, input_shape=(128, 128, 3))
         self.feature_extractor = Model(inputs=base_model.input, outputs=base_model.get_layer("block_16_project").output)
 
