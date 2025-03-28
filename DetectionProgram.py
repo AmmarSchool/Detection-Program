@@ -6,11 +6,10 @@ import os
 import tensorflow as tf
 from tkinter import messagebox
 from pygrabber.dshow_graph import FilterGraph
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageFont
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.models import Model
-
 
 class DetectionProgram:
     def __init__(self, root):
@@ -65,6 +64,13 @@ class DetectionProgram:
         # Camera Feed Display
         self.canvas = ctk.CTkLabel(root, text="")
         self.canvas.pack(pady=10, fill="both", expand=True)
+
+        # Create Heatmap Legend
+        self.legend_image = self.create_legend()
+        self.legend_photo = ImageTk.PhotoImage(self.legend_image)
+
+        self.legend_label = ctk.CTkLabel(root, image=self.legend_photo, text="")
+        self.legend_label.pack(side="right", padx=10, pady=20)
 
         self.last_ai_frame = None
 
@@ -180,6 +186,36 @@ class DetectionProgram:
     def toggle_ai(self):
         self.ai_enabled = not self.ai_enabled
         self.ai_toggle.configure(text="Disable AI" if self.ai_enabled else "Enable AI")
+
+    def create_legend(self):
+        #"""Creates a vertical heatmap legend with labels."""
+        height = 300  # Adjust as needed
+        width = 50    # Adjust as needed
+
+        # Create a vertical gradient from blue to red
+        gradient = np.linspace(0, 255, height, dtype=np.uint8).reshape((height, 1))
+        gradient = np.repeat(gradient, width, axis=1)  # Expand width
+
+        # Apply COLORMAP_JET
+        legend_colormap = cv2.applyColorMap(gradient, cv2.COLORMAP_JET)
+        legend_colormap = cv2.cvtColor(legend_colormap, cv2.COLOR_BGR2RGB)  # Convert for Tkinter
+
+        # Convert to PIL Image
+        legend_image = Image.fromarray(legend_colormap)
+
+        # Add text labels
+        draw = ImageDraw.Draw(legend_image)
+
+        try:
+            font = ImageFont.truetype("arial.ttf", 14)  # Use "DejaVuSans.ttf" on Linux
+        except IOError:
+            font = ImageFont.load_default()  # Fallback if font is not found
+
+        draw.text((5, 5), "High", fill=(255, 255, 255), font=font)
+        draw.text((5, height // 2), "Mid", fill=(255, 255, 255), font=font)
+        draw.text((5, height - 15), "Low", fill=(255, 255, 255), font=font)
+
+        return legend_image
 
 
 # Run the program
