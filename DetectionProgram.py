@@ -27,12 +27,17 @@ class DetectionProgram:
         self.input_size = (128, 128)
 
         # Load the autoencoder model
-        self.model_path = os.path.join(os.path.dirname(__file__), "models", "decoder.h5")
-        if os.path.exists(self.model_path):
-            self.model = load_model(self.model_path, compile=False)
-        else:
-            messagebox.showerror("Error", "Model file not found: decoder.h5")
-            self.model = None
+        #self.model_path = os.path.join(os.path.dirname(__file__), "models", "decoder.h5")
+        #if os.path.exists(self.model_path):
+        #    self.model = load_model(self.model_path, compile=False)
+        #else:
+        #    messagebox.showerror("Error", "Model file not found: decoder.h5")
+        #    self.model = None
+
+        self.model_list = self.get_model_list()
+        self.model = None
+        #if self.model_files:
+        self.load_selected_model(self.model_list[0])  # Load the first model by default
 
         # Load feature extractor (MobileNetV2 without top layers)s
         base_model = MobileNetV2(include_top=False, input_shape=(128, 128, 3))
@@ -61,6 +66,24 @@ class DetectionProgram:
         self.ai_toggle = ctk.CTkButton(self.top_frame, text="Enable AI", command=self.toggle_ai)
         self.ai_toggle.pack(side="left", padx=5)
 
+        # Model selection dropdown
+        self.model_label = ctk.CTkLabel(self.top_frame, text="Select Model:", font=("Arial", 14))
+        self.model_label.pack(side="left", padx=5)
+
+        self.model_list = self.get_model_list()
+        self.model_dropdown = ctk.CTkComboBox(self.top_frame, values=self.model_list, command=self.load_selected_model)
+        self.model_dropdown.pack(side="left", padx=5)
+
+        # Load default model if available
+        if self.model_list:
+            default_model = "decoder.h5"
+            if default_model in self.model_list:
+                self.model_dropdown.set(default_model)
+                self.load_selected_model(default_model)
+            else:
+                self.model_dropdown.set(self.model_list[0])
+                self.load_selected_model(self.model_list[0])
+
         # Camera Feed Display
         self.canvas = ctk.CTkLabel(root, text="")
         self.canvas.pack(pady=10, fill="both", expand=True)
@@ -78,6 +101,27 @@ class DetectionProgram:
         graph = FilterGraph()
         devices = graph.get_input_devices()
         return devices if devices else ["No camera found"]
+    
+    def get_model_list(self):
+        models_dir = os.path.join(os.path.dirname(__file__), "models")
+        if not os.path.exists(models_dir):
+            return ["decoder.h5"]
+        models = [f for f in os.listdir(models_dir) if f.endswith(".h5")]
+        return models if models else ["decoder.h5"]
+    
+    def load_selected_model(self, selected_model=None):
+        if not selected_model:
+            selected_model = self.model_dropdown.get()
+
+        model_path = os.path.join(os.path.dirname(__file__), "models", selected_model)
+        if os.path.exists(model_path):
+            try:
+                self.model = load_model(model_path, compile=False)
+                messagebox.showinfo("Model Loaded", f"Loaded model: {selected_model}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load model: {e}")
+        else:
+            messagebox.showerror("Error", f"Model file not found: {selected_model}")
 
     def start_camera(self):
         selected_camera = self.camera_dropdown.get()
@@ -211,12 +255,11 @@ class DetectionProgram:
         except IOError:
             font = ImageFont.load_default()  # Fallback if font is not found
 
-        draw.text((5, 5), "High", fill=(255, 255, 255), font=font)
+        draw.text((5, 5), "Low", fill=(255, 255, 255), font=font)
         draw.text((5, height // 2), "Mid", fill=(255, 255, 255), font=font)
-        draw.text((5, height - 15), "Low", fill=(255, 255, 255), font=font)
+        draw.text((5, height - 15), "High", fill=(255, 255, 255), font=font)
 
         return legend_image
-
 
 # Run the program
 root = ctk.CTk()
