@@ -163,7 +163,7 @@ class DetectionProgram:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             if self.ai_enabled:
-                if self.frame_count % 20 == 0:
+                if self.frame_count % 1 == 0:
                     self.last_ai_frame = self.apply_ai_detection(frame)
                 if self.last_ai_frame is not None:
                     frame = self.last_ai_frame
